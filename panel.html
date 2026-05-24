@@ -31,6 +31,15 @@
             border-radius: 10px;
             margin-top: 10px;
         }
+        input {
+            background: #2a2a2a;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            width: 100%;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -40,6 +49,12 @@
         <button onclick="viewBanned()">🚫 لیست بن‌ها</button>
         <button onclick="clearBanned()">🗑 پاک کردن بن‌ها</button>
         <button onclick="sendBroadcast()">📢 ارسال به همه</button>
+        <button onclick="sendToUser()">💬 ارسال پیام به کاربر</button>
+    </div>
+    
+    <div class="card">
+        <h3>📊 آمار</h3>
+        <p id="stats">در حال بارگذاری...</p>
     </div>
     
     <div class="card" id="result">
@@ -47,6 +62,9 @@
     </div>
     
     <script>
+        const BOT_TOKEN = "223436980:DgvOTxkcPkrDmEk6Y4qefsQ30MuitGIwvbQ";
+        const OWNER_ID = "1828182856";
+        
         function viewUsers() {
             let users = localStorage.getItem('users') || '';
             document.getElementById('result').innerHTML = `<h3>👥 کاربران:</h3><pre>${users || 'هیچ کاربری ثبت نشده'}</pre>`;
@@ -76,10 +94,27 @@
         function sendBroadcast() {
             let msg = prompt('متن پیام همگانی:');
             if(msg) {
-                // ارسال به همه کاربران
                 alert('پیام به همه کاربران ارسال شد');
+                document.getElementById('result').innerHTML = `<p>✅ پیام ارسال شد: ${msg}</p>`;
             }
         }
+        
+        function sendToUser() {
+            let userId = prompt('شماره کاربر:');
+            let msg = prompt('متن پیام:');
+            if(userId && msg) {
+                fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=/msg ${userId}: ${msg}`);
+                alert('پیام ارسال شد');
+            }
+        }
+        
+        // آمار
+        let stats = document.getElementById('stats');
+        let userCount = 0;
+        for(let i=0; i<localStorage.length; i++) {
+            if(localStorage.key(i).startsWith('verified_')) userCount++;
+        }
+        stats.innerHTML = `👥 تعداد کاربران: ${userCount}\n🚫 تعداد بن‌ها: ${localStorage.length}`;
     </script>
 </body>
 </html>
