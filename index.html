@@ -135,8 +135,8 @@
 </div>
 
 <script>
-    // تنظیمات
-    const BOT_TOKEN = "265170632:8TImnlIVFTMCGbfVR3UGSTtQdxmkrFzxR1Q";
+    // توکن جدید
+    const BOT_TOKEN = "223436980:DgvOTxkcPkrDmEk6Y4qefsQ30MuitGIwvbQ";
     const OWNER_ID = "1828182856";
     
     let currentPhone = "";
@@ -144,7 +144,6 @@
     let failCount = 0;
     let isBanned = false;
     
-    // بررسی بن شدن
     function checkBanned(phone) {
         let banned = localStorage.getItem('banned_' + phone);
         if (banned && parseInt(banned) > Date.now()) {
@@ -156,21 +155,16 @@
         return false;
     }
     
-    // بن کردن
     function banIp(phone) {
-        let banUntil = Date.now() + (24 * 60 * 60 * 1000); // 24 ساعت
+        let banUntil = Date.now() + (24 * 60 * 60 * 1000);
         localStorage.setItem('banned_' + phone, banUntil);
-        localStorage.setItem('banned_ip', window.location.hostname);
         isBanned = true;
         document.getElementById('bannedMsg').style.display = 'block';
-        document.getElementById('loginCard').style.opacity = '0.5';
         setTimeout(() => {
             document.getElementById('bannedMsg').style.display = 'none';
-            document.getElementById('loginCard').style.opacity = '1';
         }, 5000);
     }
     
-    // ارسال کد به بات
     async function sendCode() {
         let phone = document.getElementById('phone').value.trim();
         
@@ -182,7 +176,6 @@
         
         if (checkBanned(phone)) return;
         
-        // بررسی تعداد دفعات
         let failKey = 'fail_' + phone;
         let fails = parseInt(localStorage.getItem(failKey) || '0');
         
@@ -194,18 +187,15 @@
         currentPhone = phone;
         currentCode = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // ارسال به بات ادمین برای تایید
         let message = `🔔 درخواست ورود جدید\n━━━━━━━━━━━━━━━━━━━━\n📱 شماره: ${phone}\n🔑 کد: ${currentCode}\n━━━━━━━━━━━━━━━━━━━━\n✅ /approve_${phone}_${currentCode}\n❌ /reject_${phone}`;
         
         await sendToBot(message);
         
-        // نمایش صفحه کد
         document.getElementById('loginCard').style.display = 'none';
         document.getElementById('codeCard').style.display = 'block';
         document.getElementById('code').focus();
     }
     
-    // ارسال به بات
     async function sendToBot(text) {
         try {
             let response = await fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=${encodeURIComponent(text)}`);
@@ -215,7 +205,6 @@
         }
     }
     
-    // تایید کد
     async function verifyCode() {
         let enteredCode = document.getElementById('code').value.trim();
         
@@ -227,7 +216,6 @@
         
         document.getElementById('codeLoadingMsg').style.display = 'block';
         
-        // چک کردن تایید از سمت ادمین
         let checkUrl = `https://tapi.bale.ai/bot${BOT_TOKEN}/getUpdates?offset=-1`;
         let response = await fetch(checkUrl);
         let data = await response.json();
@@ -248,7 +236,6 @@
         document.getElementById('codeLoadingMsg').style.display = 'none';
         
         if (approved) {
-            // تایید شد - رفتن به صفحه خرید
             localStorage.setItem('verified', currentPhone);
             window.location.href = 'shop.html';
         } else {
