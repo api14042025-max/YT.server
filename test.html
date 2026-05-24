@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>فروش کانفیگ | سرور اختصاصی</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tahoma', 'Segoe UI', 'IranSans', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 25px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        h1 {
+            font-size: 26px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .price {
+            font-size: 42px;
+            font-weight: bold;
+            color: #ffd966;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .price small {
+            font-size: 16px;
+            color: #ddd;
+        }
+
+        .features {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .features li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .features li::before {
+            content: "✅";
+            font-size: 18px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            background: #25d366;
+            color: #fff;
+            text-align: center;
+            padding: 14px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: #128c7e;
+            transform: scale(1.02);
+        }
+
+        .btn-telegram {
+            background: #0088cc;
+        }
+
+        .btn-telegram:hover {
+            background: #006699;
+        }
+
+        .note {
+            font-size: 12px;
+            text-align: center;
+            margin-top: 15px;
+            opacity: 0.7;
+        }
+
+        .support {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .support a {
+            color: #ffd966;
+            text-decoration: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .download-box {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+        }
+
+        .download-btn {
+            background: #4caf50;
+            margin-top: 10px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 30px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .order-box {
+            margin-top: 20px;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 12px;
+            margin-top: 30px;
+            opacity: 0.5;
+        }
+
+        .discount {
+            background: #ff4444;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .whatsapp-btn {
+            background: #25D366;
+        }
+
+        .soroush-btn {
+            background: #3b5999;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="discount">
+        🔥 تخفیف ویژه تا پایان هفته 🔥
+    </div>
+
+    <div class="card">
+        <h1>🚀 سرور اختصاصی و پرسرعت</h1>
+        <p style="text-align:center;">اینترنت بدون قطعی و با سرعت بالا</p>
+
+        <div class="price">
+            ۵۰,۰۰۰ <small>تومان</small>
+        </div>
+
+        <ul class="features">
+            <li>✅ ۲۴ ساعته، آنلاین و پایدار</li>
+            <li>✅ بدون قطعی و افت سرعت</li>
+            <li>✅ سرعت عالی برای یوتیوب و اینستاگرام</li>
+            <li>✅ یک سال اعتبار</li>
+            <li>✅ پشتیبانی ۲۴ ساعته</li>
+            <li>✅ قابل استفاده روی همه دستگاه‌ها</li>
+        </ul>
+
+        <div class="order-box">
+            <label>📱 شماره تماس (اختیاری)</label>
+            <input type="text" id="phone" placeholder="مثال: 09123456789">
+            
+            <label>🎯 تعداد کانفیگ</label>
+            <select id="quantity">
+                <option value="1">1 عدد کانفیگ - ۵۰,۰۰۰ تومان</option>
+                <option value="2">2 عدد کانفیگ - ۹۰,۰۰۰ تومان (۱۰٪ تخفیف)</option>
+                <option value="3">3 عدد کانفیگ - ۱۲۰,۰۰۰ تومان (۲۰٪ تخفیف)</option>
+                <option value="5">5 عدد کانفیگ - ۱۸۰,۰۰۰ تومان (۲۸٪ تخفیف)</option>
+            </select>
+
+            <button class="btn" id="paymentBtn">💰 خرید و دریافت کانفیگ</button>
+        </div>
+
+        <div id="downloadSection" class="download-box hidden">
+            <p>✅ سفارش شما با موفقیت ثبت شد!</p>
+            <p>👇 برای دریافت کانفیگ و راهنما روی دکمه زیر کلیک کنید</p>
+            <a href="#" id="downloadLink" class="btn download-btn">📥 دریافت کانفیگ و آموزش</a>
+            <p style="margin-top:15px; font-size:12px;">🔰 بعد از دریافت، کانفیگ رو توی برنامه وارد کنید</p>
+        </div>
+
+        <div class="support">
+            📩 پشتیبانی و راهنمایی: 
+            <a href="https://t.me/foroshcanfig" target="_blank">@foroshcanfig</a>
+        </div>
+
+        <div class="note">
+            * کانفیگ به صورت لینک فعال دریافت می‌شود.<br>
+            پشتیبانی ۲۴ ساعته حتی بعد از خرید.
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🎯 روش استفاده:</h3>
+        <ul class="features" style="margin-top: 10px;">
+            <li>1. بعد از خرید، لینک کانفیگ برات ارسال میشه</li>
+            <li>2. برنامه V2rayNG یا Nekobox رو نصب کن</li>
+            <li>3. لینک رو داخل برنامه کپی کن</li>
+            <li>4. روشن کن و از اینترنت پرسرعت لذت ببر! 🚀</li>
+        </ul>
+    </div>
+
+    <footer>
+        © فروش کانفیگ | سرور اختصاصی | پشتیبانی ۲۴ ساعته
+    </footer>
+</div>
+
+<script>
+    // لینک‌های دانلود
+    const V2RAYNG_LINK = "https://github.com/2dust/v2rayNG/releases/download/1.8.23/v2rayNG_1.8.23.apk";
+    const NEKOBOX_LINK = "https://github.com/MatsuriDayo/NekoBoxForAndroid/releases/download/1.2.6/NekoBoxForAndroid_v1.2.6.apk";
+    const CONFIG_LINK = "https://raw.githubusercontent.com/Epodonos/v2ray-collector/main/links/v2ray.txt";
+    
+    let userPhone = "";
+    let quantity = 1;
+    let price = 50000;
+    
+    document.getElementById("paymentBtn").addEventListener("click", function() {
+        userPhone = document.getElementById("phone").value;
+        quantity = parseInt(document.getElementById("quantity").value);
+        
+        // محاسبه قیمت
+        if (quantity === 2) price = 90000;
+        else if (quantity === 3) price = 120000;
+        else if (quantity === 5) price = 180000;
+        else price = 50000;
+        
+        // نمایش پیام
+        alert("✅ در حال اتصال به درگاه پرداخت...\n\n💰 مبلغ قابل پرداخت: " + price.toLocaleString() + " تومان\n\nپس از پرداخت، لینک دانلود نمایش داده می‌شود.");
+        
+        // در نسخه واقعی، اینجا درگاه پرداخت وصل میشه
+        // بعد از پرداخت موفق:
+        document.getElementById("downloadSection").classList.remove("hidden");
+        
+        // تنظیم لینک دانلود
+        document.getElementById("downloadLink").href = CONFIG_LINK;
+        
+        // ارسال نوتیفیکیشن به ادمین (اختیاری)
+        sendNotificationToAdmin();
+    });
+    
+    function sendNotificationToAdmin() {
+        // این بخش اختیاری - برای اطلاع به ادمین
+        let message = `🛒 فروش جدید!\n⏱ زمان: ${new Date().toLocaleString('fa-IR')}\n📱 شماره: ${userPhone || 'نامشخص'}\n💰 مبلغ: ${price.toLocaleString()} تومان\n📦 تعداد: ${quantity} عدد`;
+        
+        // می‌تونی به بات بله یا تلگرام اطلاع بدی
+        console.log("فروش جدید:", message);
+    }
+    
+    // دانلود برنامه V2rayNG
+    function downloadV2ray() {
+        window.open(V2RAYNG_LINK, '_blank');
+    }
+    
+    // دانلود برنامه Nekobox
+    function downloadNekobox() {
+        window.open(NEKOBOX_LINK, '_blank');
+    }
+</script>
+
+</body>
+</html>
