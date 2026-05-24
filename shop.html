@@ -167,12 +167,11 @@
 </div>
 
 <script>
-    const BOT_TOKEN = "265170632:8TImnlIVFTMCGbfVR3UGSTtQdxmkrFzxR1Q";
+    const BOT_TOKEN = "223436980:DgvOTxkcPkrDmEk6Y4qefsQ30MuitGIwvbQ";
     const OWNER_ID = "1828182856";
     let phone = localStorage.getItem('verified') || '';
     let lastId = 0;
     
-    // دریافت پیام‌های ادمین
     async function getAdminMessages() {
         try {
             let response = await fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/getUpdates?offset=${lastId+1}`);
@@ -211,13 +210,11 @@
     
     function buy() {
         alert("✅ در حال اتصال به درگاه پرداخت...\n💰 مبلغ: ۵۰,۰۰۰ تومان");
-        // بعد از پرداخت موفق
         document.getElementById('downloadSection').classList.remove('hidden');
         document.getElementById('downloadLink').href = "https://raw.githubusercontent.com/Epodonos/v2ray-collector/main/links/v2ray.txt";
         fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=🛒 خرید جدید از ${phone}`);
     }
     
-    // هر 3 ثانیه پیام‌ها رو چک کن
     setInterval(getAdminMessages, 3000);
     getAdminMessages();
 </script>
