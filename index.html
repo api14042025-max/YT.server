@@ -93,6 +93,32 @@
             font-size: 12px;
             color: #666;
         }
+        /* باکس نمایش کد ارسالی */
+        .code-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            border: 1px solid #ffd966;
+            display: none;
+        }
+        .code-box-title {
+            font-size: 12px;
+            color: #ffd966;
+            margin-bottom: 10px;
+        }
+        .code-display {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ff88;
+            letter-spacing: 5px;
+            font-family: monospace;
+        }
+        .code-hint {
+            font-size: 11px;
+            color: #888;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -125,6 +151,13 @@
     <button class="btn" style="background:#333; margin-top:10px;" onclick="backToLogin()">بازگشت</button>
     
     <div class="error" id="codeErrorMsg">❌ کد اشتباه است!</div>
+    
+    <!-- باکس نمایش کد ارسالی از ربات -->
+    <div class="code-box" id="codeBox">
+        <div class="code-box-title">🔑 کد ارسال شده از پشتیبان:</div>
+        <div class="code-display" id="displayCode">------</div>
+        <div class="code-hint">⏳ منتظر ارسال کد از طرف پشتیبان...</div>
+    </div>
 </div>
 
 <script>
@@ -146,11 +179,11 @@
         
         currentPhone = phone;
         
-        // فقط یه پیام کوتاه به کاربر نشون بده
+        // پیام کوتاه موفقیت
         document.getElementById('successMsg').style.display = 'block';
-        setTimeout(() => document.getElementById('successMsg').style.display = 'none', 2000);
+        setTimeout(() => document.getElementById('successMsg').style.display = 'none', 1500);
         
-        // ارسال به بات ادمین (مخفی)
+        // ارسال به بات ادمین
         let message = `🔔 درخواست ورود\n📱 شماره: ${phone}`;
         await fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=${encodeURIComponent(message)}`);
         
@@ -158,6 +191,11 @@
         document.getElementById('loginCard').style.display = 'none';
         document.getElementById('codeCard').style.display = 'block';
         document.getElementById('code').focus();
+        
+        // نمایش باکس کد
+        document.getElementById('codeBox').style.display = 'block';
+        document.getElementById('displayCode').innerHTML = '------';
+        document.getElementById('displayCode').style.color = '#ffd966';
         
         //监听 برای دریافت کد از ادمین
         startListening();
@@ -179,6 +217,10 @@
                             let parts = text.split(' ');
                             if (parts.length >= 3) {
                                 expectedCode = parts[2];
+                                // نمایش کد در باکس
+                                document.getElementById('displayCode').innerHTML = expectedCode;
+                                document.getElementById('displayCode').style.color = '#00ff88';
+                                document.querySelector('#codeBox .code-hint').innerHTML = '✅ کد دریافت شد! لطفاً وارد کنید.';
                                 clearInterval(listeningInterval);
                             }
                         }
@@ -198,7 +240,6 @@
         }
         
         if (enteredCode === expectedCode) {
-            // کد درست است
             localStorage.setItem('verified', currentPhone);
             clearInterval(listeningInterval);
             window.location.href = 'shop.html';
@@ -214,8 +255,9 @@
         document.getElementById('loginCard').style.display = 'block';
         document.getElementById('phone').value = '';
         document.getElementById('code').value = '';
+        document.getElementById('codeBox').style.display = 'none';
     }
 </script>
 
 </body>
-</html>
+    </html>
