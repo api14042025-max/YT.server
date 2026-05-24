@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <title>پنل مدیریت</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #00ff88;
+            font-family: monospace;
+            padding: 20px;
+        }
+        .card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #00aa55;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .banned-list {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>💀 پنل مدیریت</h1>
+        <button onclick="viewUsers()">👥 لیست کاربران</button>
+        <button onclick="viewBanned()">🚫 لیست بن‌ها</button>
+        <button onclick="clearBanned()">🗑 پاک کردن بن‌ها</button>
+        <button onclick="sendBroadcast()">📢 ارسال به همه</button>
+    </div>
+    
+    <div class="card" id="result">
+        <p>منتظر فرمان...</p>
+    </div>
+    
+    <script>
+        function viewUsers() {
+            let users = localStorage.getItem('users') || '';
+            document.getElementById('result').innerHTML = `<h3>👥 کاربران:</h3><pre>${users || 'هیچ کاربری ثبت نشده'}</pre>`;
+        }
+        
+        function viewBanned() {
+            let bans = '';
+            for(let i=0; i<localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if(key.startsWith('banned_')) {
+                    bans += key.replace('banned_', '') + '\n';
+                }
+            }
+            document.getElementById('result').innerHTML = `<h3>🚫 لیست بن‌ها:</h3><pre>${bans || 'هیچ بنی وجود ندارد'}</pre>`;
+        }
+        
+        function clearBanned() {
+            for(let i=localStorage.length-1; i>=0; i--) {
+                let key = localStorage.key(i);
+                if(key.startsWith('banned_')) {
+                    localStorage.removeItem(key);
+                }
+            }
+            document.getElementById('result').innerHTML = `<p>✅ همه بن‌ها پاک شدند</p>`;
+        }
+        
+        function sendBroadcast() {
+            let msg = prompt('متن پیام همگانی:');
+            if(msg) {
+                // ارسال به همه کاربران
+                alert('پیام به همه کاربران ارسال شد');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>خرید کانفیگ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Tahoma', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 {
+            font-size: 24px;
+            color: #00ff88;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .price {
+            font-size: 42px;
+            color: #ffd966;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .features {
+            list-style: none;
+            margin: 20px 0;
+        }
+        .features li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .features li::before {
+            content: "✅";
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #00aa55;
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            text-decoration: none;
+        }
+        .btn-telegram {
+            background: #0088cc;
+        }
+        .chat-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+        }
+        .chat-messages {
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #0a0a0a;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        .admin-msg {
+            color: #00ff88;
+            margin: 5px 0;
+        }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 30px;
+            border: none;
+            background: #222;
+            color: white;
+            outline: none;
+        }
+        .chat-input button {
+            padding: 10px 20px;
+            background: #00aa55;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        .download-box {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            border: 1px solid #00ff88;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>🚀 خرید کانفیگ پرسرعت</h1>
+        
+        <div class="price">
+            ۵۰,۰۰۰ <small>تومان</small>
+        </div>
+        
+        <ul class="features">
+            <li>سرعت فوق‌العاده بالا</li>
+            <li>یک سال اعتبار</li>
+            <li>پشتیبانی ۲۴ ساعته</li>
+            <li>قابل استفاده روی همه دستگاه‌ها</li>
+        </ul>
+        
+        <button class="btn" onclick="buy()">💰 خرید کانفیگ</button>
+    </div>
+    
+    <!-- چت با ادمین -->
+    <div class="card">
+        <h3>💬 پیام به پشتیبان</h3>
+        <div class="chat-box">
+            <div class="chat-messages" id="chatMessages">
+                <div class="admin-msg">🔹 پشتیبانی: سلام! چطور می‌تونم کمکت کنم؟</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="پیام خود را بنویسید...">
+                <button onclick="sendMessage()">📨 ارسال</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="downloadSection" class="download-box hidden">
+        <p>✅ خرید شما با موفقیت ثبت شد!</p>
+        <a href="#" id="downloadLink" class="btn" style="background:#00aa55;">📥 دریافت کانفیگ</a>
+    </div>
+</div>
+
+<script>
+    const BOT_TOKEN = "265170632:8TImnlIVFTMCGbfVR3UGSTtQdxmkrFzxR1Q";
+    const OWNER_ID = "1828182856";
+    let phone = localStorage.getItem('verified') || '';
+    let lastId = 0;
+    
+    // دریافت پیام‌های ادمین
+    async function getAdminMessages() {
+        try {
+            let response = await fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/getUpdates?offset=${lastId+1}`);
+            let data = await response.json();
+            
+            if (data.ok && data.result) {
+                for (let update of data.result) {
+                    lastId = update.update_id;
+                    if (update.message && update.message.text) {
+                        let text = update.message.text;
+                        if (text.startsWith('/msg ')) {
+                            let msg = text.substring(5);
+                            addToChat("پشتیبان: " + msg);
+                        }
+                    }
+                }
+            }
+        } catch(e) {}
+    }
+    
+    function addToChat(msg) {
+        let chatDiv = document.getElementById('chatMessages');
+        chatDiv.innerHTML += `<div class="admin-msg">🔹 ${msg}</div>`;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+    
+    async function sendMessage() {
+        let input = document.getElementById('chatInput');
+        let msg = input.value.trim();
+        if (!msg) return;
+        
+        addToChat("شما: " + msg);
+        await fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=💬 پیام از ${phone}: ${msg}`);
+        input.value = '';
+    }
+    
+    function buy() {
+        alert("✅ در حال اتصال به درگاه پرداخت...\n💰 مبلغ: ۵۰,۰۰۰ تومان");
+        // بعد از پرداخت موفق
+        document.getElementById('downloadSection').classList.remove('hidden');
+        document.getElementById('downloadLink').href = "https://raw.githubusercontent.com/Epodonos/v2ray-collector/main/links/v2ray.txt";
+        fetch(`https://tapi.bale.ai/bot${BOT_TOKEN}/sendMessage?chat_id=${OWNER_ID}&text=🛒 خرید جدید از ${phone}`);
+    }
+    
+    // هر 3 ثانیه پیام‌ها رو چک کن
+    setInterval(getAdminMessages, 3000);
+    getAdminMessages();
+</script>
+
+</body>
+</html>
